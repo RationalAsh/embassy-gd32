@@ -160,6 +160,8 @@ RS_HEADER
     for chip in "${chips[@]}"; do
         echo "#[cfg(feature = \"$chip\")]"
         echo "pub mod $chip;"
+        echo "#[cfg(feature = \"$chip\")]"
+        echo "pub use self::$chip as pac;"
         echo
     done
 } > "$DEST_LIB_RS"
