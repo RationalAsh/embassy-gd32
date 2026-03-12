@@ -2,7 +2,6 @@
 #![no_main]
 
 use embassy_executor::Spawner;
-use embassy_gd32::gd32f425::interrupt;
 use embassy_gd32::time_driver;
 use embassy_time::Timer;
 use panic_probe as _;
@@ -20,9 +19,4 @@ async fn main(_spawner: Spawner) {
         rprintln!("embassy-time-smoke tick={}", count);
         Timer::after_millis(500).await;
     }
-}
-
-#[interrupt]
-fn TIMER2() {
-    time_driver::on_interrupt();
 }

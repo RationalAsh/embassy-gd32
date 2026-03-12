@@ -6,6 +6,8 @@ use critical_section::{CriticalSection, Mutex};
 use embassy_time_driver::{Driver, TICK_HZ};
 use embassy_time_queue_utils::Queue;
 use crate::gd32f425::{Interrupt, Rcu, Timer2};
+#[cfg(feature = "rt")]
+use crate::gd32f425::interrupt;
 
 const IRC16M_HZ: u32 = 16_000_000;
 const DEFAULT_HXTAL_HZ: u32 = 8_000_000;
@@ -351,6 +353,12 @@ pub fn on_interrupt() {
             DRIVER.trigger_alarm(cs);
         }
     });
+}
+
+#[cfg(feature = "rt")]
+#[interrupt]
+fn TIMER2() {
+    on_interrupt();
 }
 
 #[cfg(test)]

@@ -104,5 +104,23 @@ pub mod gd32f425;
 #[cfg(feature = "gd32f425")]
 pub use self::gd32f425 as pac;
 
-#[cfg(feature = "gd32f425")]
+#[cfg(all(feature = "gd32f425", feature = "time-driver-tim2"))]
+#[path = "time_driver_gd32f425_tim2.rs"]
 pub mod time_driver;
+
+#[cfg(not(all(feature = "gd32f425", feature = "time-driver-tim2")))]
+pub mod time_driver {
+    fn unsupported() -> ! {
+        unimplemented!(
+            "unsupported time driver feature combination; expected `gd32f425` + `time-driver-tim2`"
+        )
+    }
+
+    pub fn init() {
+        unsupported();
+    }
+
+    pub fn on_interrupt() {
+        unsupported();
+    }
+}
