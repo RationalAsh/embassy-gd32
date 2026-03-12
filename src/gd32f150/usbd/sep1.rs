@@ -1,0 +1,63 @@
+#[doc = "Register `SEP1` reader"]
+pub type R = crate::R<Sep1Spec>;
+#[doc = "Register `SEP1` writer"]
+pub type W = crate::W<Sep1Spec>;
+#[doc = "Field `SUBPID_ATTR` reader - LPM Token bmAttribute Field."]
+pub type SubpidAttrR = crate::FieldReader<u16>;
+#[doc = "Field `SUBPID_ATTR` writer - LPM Token bmAttribute Field."]
+pub type SubpidAttrW<'a, REG> = crate::FieldWriter<'a, REG, 11, u16>;
+#[doc = "Field `SUB_STA` reader - Status bits, for the handshake of receiving subpid LPM"]
+pub type SubStaR = crate::FieldReader;
+#[doc = "Field `SUB_STA` writer - Status bits, for the handshake of receiving subpid LPM"]
+pub type SubStaW<'a, REG> = crate::FieldWriter<'a, REG, 2>;
+#[doc = "Field `SUB_ST` reader - Successful Receive for LPM Token"]
+pub type SubStR = crate::BitReader;
+#[doc = "Field `SUB_ST` writer - Successful Receive for LPM Token"]
+pub type SubStW<'a, REG> = crate::BitWriter<'a, REG>;
+impl R {
+    #[doc = "Bits 0:10 - LPM Token bmAttribute Field."]
+    #[inline(always)]
+    pub fn subpid_attr(&self) -> SubpidAttrR {
+        SubpidAttrR::new(self.bits & 0x07ff)
+    }
+    #[doc = "Bits 12:13 - Status bits, for the handshake of receiving subpid LPM"]
+    #[inline(always)]
+    pub fn sub_sta(&self) -> SubStaR {
+        SubStaR::new(((self.bits >> 12) & 3) as u8)
+    }
+    #[doc = "Bit 15 - Successful Receive for LPM Token"]
+    #[inline(always)]
+    pub fn sub_st(&self) -> SubStR {
+        SubStR::new(((self.bits >> 15) & 1) != 0)
+    }
+}
+impl W {
+    #[doc = "Bits 0:10 - LPM Token bmAttribute Field."]
+    #[inline(always)]
+    pub fn subpid_attr(&mut self) -> SubpidAttrW<'_, Sep1Spec> {
+        SubpidAttrW::new(self, 0)
+    }
+    #[doc = "Bits 12:13 - Status bits, for the handshake of receiving subpid LPM"]
+    #[inline(always)]
+    pub fn sub_sta(&mut self) -> SubStaW<'_, Sep1Spec> {
+        SubStaW::new(self, 12)
+    }
+    #[doc = "Bit 15 - Successful Receive for LPM Token"]
+    #[inline(always)]
+    pub fn sub_st(&mut self) -> SubStW<'_, Sep1Spec> {
+        SubStW::new(self, 15)
+    }
+}
+#[doc = "USB sub-endpoint 1 register\n\nYou can [`read`](crate::Reg::read) this register and get [`sep1::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`sep1::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct Sep1Spec;
+impl crate::RegisterSpec for Sep1Spec {
+    type Ux = u16;
+}
+#[doc = "`read()` method returns [`sep1::R`](R) reader structure"]
+impl crate::Readable for Sep1Spec {}
+#[doc = "`write(|w| ..)` method takes [`sep1::W`](W) writer structure"]
+impl crate::Writable for Sep1Spec {
+    type Safety = crate::Unsafe;
+}
+#[doc = "`reset()` method sets SEP1 to value 0"]
+impl crate::Resettable for Sep1Spec {}

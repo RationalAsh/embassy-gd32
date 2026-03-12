@@ -1,0 +1,63 @@
+#[doc = "Register `DIEP2LEN` reader"]
+pub type R = crate::R<Diep2lenSpec>;
+#[doc = "Register `DIEP2LEN` writer"]
+pub type W = crate::W<Diep2lenSpec>;
+#[doc = "Field `TLEN` reader - Transfer length"]
+pub type TlenR = crate::FieldReader<u32>;
+#[doc = "Field `TLEN` writer - Transfer length"]
+pub type TlenW<'a, REG> = crate::FieldWriter<'a, REG, 19, u32>;
+#[doc = "Field `PCNT` reader - Packet count"]
+pub type PcntR = crate::FieldReader<u16>;
+#[doc = "Field `PCNT` writer - Packet count"]
+pub type PcntW<'a, REG> = crate::FieldWriter<'a, REG, 10, u16>;
+#[doc = "Field `MCNT` reader - Multi count"]
+pub type McntR = crate::FieldReader;
+#[doc = "Field `MCNT` writer - Multi count"]
+pub type McntW<'a, REG> = crate::FieldWriter<'a, REG, 2>;
+impl R {
+    #[doc = "Bits 0:18 - Transfer length"]
+    #[inline(always)]
+    pub fn tlen(&self) -> TlenR {
+        TlenR::new(self.bits & 0x0007_ffff)
+    }
+    #[doc = "Bits 19:28 - Packet count"]
+    #[inline(always)]
+    pub fn pcnt(&self) -> PcntR {
+        PcntR::new(((self.bits >> 19) & 0x03ff) as u16)
+    }
+    #[doc = "Bits 29:30 - Multi count"]
+    #[inline(always)]
+    pub fn mcnt(&self) -> McntR {
+        McntR::new(((self.bits >> 29) & 3) as u8)
+    }
+}
+impl W {
+    #[doc = "Bits 0:18 - Transfer length"]
+    #[inline(always)]
+    pub fn tlen(&mut self) -> TlenW<'_, Diep2lenSpec> {
+        TlenW::new(self, 0)
+    }
+    #[doc = "Bits 19:28 - Packet count"]
+    #[inline(always)]
+    pub fn pcnt(&mut self) -> PcntW<'_, Diep2lenSpec> {
+        PcntW::new(self, 19)
+    }
+    #[doc = "Bits 29:30 - Multi count"]
+    #[inline(always)]
+    pub fn mcnt(&mut self) -> McntW<'_, Diep2lenSpec> {
+        McntW::new(self, 29)
+    }
+}
+#[doc = "device IN endpoint-2 transfer length register\n\nYou can [`read`](crate::Reg::read) this register and get [`diep2len::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`diep2len::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct Diep2lenSpec;
+impl crate::RegisterSpec for Diep2lenSpec {
+    type Ux = u32;
+}
+#[doc = "`read()` method returns [`diep2len::R`](R) reader structure"]
+impl crate::Readable for Diep2lenSpec {}
+#[doc = "`write(|w| ..)` method takes [`diep2len::W`](W) writer structure"]
+impl crate::Writable for Diep2lenSpec {
+    type Safety = crate::Unsafe;
+}
+#[doc = "`reset()` method sets DIEP2LEN to value 0"]
+impl crate::Resettable for Diep2lenSpec {}

@@ -1,0 +1,49 @@
+#[doc = "Register `ST0CMP0CP` reader"]
+pub type R = crate::R<St0cmp0cpSpec>;
+#[doc = "Register `ST0CMP0CP` writer"]
+pub type W = crate::W<St0cmp0cpSpec>;
+#[doc = "Field `CMP0VAL` reader - Compare 0 value"]
+pub type Cmp0valR = crate::FieldReader<u16>;
+#[doc = "Field `CMP0VAL` writer - Compare 0 value"]
+pub type Cmp0valW<'a, REG> = crate::FieldWriter<'a, REG, 16, u16>;
+#[doc = "Field `CREP` reader - Counter repetition value"]
+pub type CrepR = crate::FieldReader;
+#[doc = "Field `CREP` writer - Counter repetition value"]
+pub type CrepW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+impl R {
+    #[doc = "Bits 0:15 - Compare 0 value"]
+    #[inline(always)]
+    pub fn cmp0val(&self) -> Cmp0valR {
+        Cmp0valR::new((self.bits & 0xffff) as u16)
+    }
+    #[doc = "Bits 16:23 - Counter repetition value"]
+    #[inline(always)]
+    pub fn crep(&self) -> CrepR {
+        CrepR::new(((self.bits >> 16) & 0xff) as u8)
+    }
+}
+impl W {
+    #[doc = "Bits 0:15 - Compare 0 value"]
+    #[inline(always)]
+    pub fn cmp0val(&mut self) -> Cmp0valW<'_, St0cmp0cpSpec> {
+        Cmp0valW::new(self, 0)
+    }
+    #[doc = "Bits 16:23 - Counter repetition value"]
+    #[inline(always)]
+    pub fn crep(&mut self) -> CrepW<'_, St0cmp0cpSpec> {
+        CrepW::new(self, 16)
+    }
+}
+#[doc = "SHRTIMER Slave_TIMER0 compare 0 composite register\n\nYou can [`read`](crate::Reg::read) this register and get [`st0cmp0cp::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`st0cmp0cp::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct St0cmp0cpSpec;
+impl crate::RegisterSpec for St0cmp0cpSpec {
+    type Ux = u32;
+}
+#[doc = "`read()` method returns [`st0cmp0cp::R`](R) reader structure"]
+impl crate::Readable for St0cmp0cpSpec {}
+#[doc = "`write(|w| ..)` method takes [`st0cmp0cp::W`](W) writer structure"]
+impl crate::Writable for St0cmp0cpSpec {
+    type Safety = crate::Unsafe;
+}
+#[doc = "`reset()` method sets ST0CMP0CP to value 0"]
+impl crate::Resettable for St0cmp0cpSpec {}

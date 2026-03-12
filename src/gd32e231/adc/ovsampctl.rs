@@ -1,0 +1,77 @@
+#[doc = "Register `OVSAMPCTL` reader"]
+pub type R = crate::R<OvsampctlSpec>;
+#[doc = "Register `OVSAMPCTL` writer"]
+pub type W = crate::W<OvsampctlSpec>;
+#[doc = "Field `OVSEN` reader - Oversampler Enable"]
+pub type OvsenR = crate::BitReader;
+#[doc = "Field `OVSEN` writer - Oversampler Enable"]
+pub type OvsenW<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `OVSR` reader - Oversampling ratio"]
+pub type OvsrR = crate::FieldReader;
+#[doc = "Field `OVSR` writer - Oversampling ratio"]
+pub type OvsrW<'a, REG> = crate::FieldWriter<'a, REG, 3>;
+#[doc = "Field `OVSS` reader - Oversampling shift"]
+pub type OvssR = crate::FieldReader;
+#[doc = "Field `OVSS` writer - Oversampling shift"]
+pub type OvssW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+#[doc = "Field `TOVS` reader - Triggered Oversampling"]
+pub type TovsR = crate::BitReader;
+#[doc = "Field `TOVS` writer - Triggered Oversampling"]
+pub type TovsW<'a, REG> = crate::BitWriter<'a, REG>;
+impl R {
+    #[doc = "Bit 0 - Oversampler Enable"]
+    #[inline(always)]
+    pub fn ovsen(&self) -> OvsenR {
+        OvsenR::new((self.bits & 1) != 0)
+    }
+    #[doc = "Bits 2:4 - Oversampling ratio"]
+    #[inline(always)]
+    pub fn ovsr(&self) -> OvsrR {
+        OvsrR::new(((self.bits >> 2) & 7) as u8)
+    }
+    #[doc = "Bits 5:8 - Oversampling shift"]
+    #[inline(always)]
+    pub fn ovss(&self) -> OvssR {
+        OvssR::new(((self.bits >> 5) & 0x0f) as u8)
+    }
+    #[doc = "Bit 9 - Triggered Oversampling"]
+    #[inline(always)]
+    pub fn tovs(&self) -> TovsR {
+        TovsR::new(((self.bits >> 9) & 1) != 0)
+    }
+}
+impl W {
+    #[doc = "Bit 0 - Oversampler Enable"]
+    #[inline(always)]
+    pub fn ovsen(&mut self) -> OvsenW<'_, OvsampctlSpec> {
+        OvsenW::new(self, 0)
+    }
+    #[doc = "Bits 2:4 - Oversampling ratio"]
+    #[inline(always)]
+    pub fn ovsr(&mut self) -> OvsrW<'_, OvsampctlSpec> {
+        OvsrW::new(self, 2)
+    }
+    #[doc = "Bits 5:8 - Oversampling shift"]
+    #[inline(always)]
+    pub fn ovss(&mut self) -> OvssW<'_, OvsampctlSpec> {
+        OvssW::new(self, 5)
+    }
+    #[doc = "Bit 9 - Triggered Oversampling"]
+    #[inline(always)]
+    pub fn tovs(&mut self) -> TovsW<'_, OvsampctlSpec> {
+        TovsW::new(self, 9)
+    }
+}
+#[doc = "ADC oversample control register\n\nYou can [`read`](crate::Reg::read) this register and get [`ovsampctl::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ovsampctl::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct OvsampctlSpec;
+impl crate::RegisterSpec for OvsampctlSpec {
+    type Ux = u32;
+}
+#[doc = "`read()` method returns [`ovsampctl::R`](R) reader structure"]
+impl crate::Readable for OvsampctlSpec {}
+#[doc = "`write(|w| ..)` method takes [`ovsampctl::W`](W) writer structure"]
+impl crate::Writable for OvsampctlSpec {
+    type Safety = crate::Unsafe;
+}
+#[doc = "`reset()` method sets OVSAMPCTL to value 0"]
+impl crate::Resettable for OvsampctlSpec {}
