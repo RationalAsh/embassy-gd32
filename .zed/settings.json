@@ -10,8 +10,8 @@
           "allTargets": false,
           "allFeatures": false,
           "noDefaultFeatures": true,
-          "features": ["gd32c103"],
-          "targets": "thumbv7m-none-eabi"
+          "features": ["gd32f425"],
+          "targets": "thumbv7em-none-eabihf"
         }
       }
     }

@@ -104,3 +104,5 @@ pub mod gd32f425;
 #[cfg(feature = "gd32f425")]
 pub use self::gd32f425 as pac;
 
+#[cfg(feature = "gd32f425")]
+pub mod time_driver;
