@@ -10,7 +10,7 @@
           "allTargets": false,
           "allFeatures": false,
           "noDefaultFeatures": true,
-          "features": ["gd32f425", "rt"],
+          "features": ["gd32f425", "time-driver-tim2"],
           "targets": "thumbv7em-none-eabihf",
         },
       },

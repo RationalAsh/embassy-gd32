@@ -5,9 +5,52 @@ use cortex_m::peripheral::NVIC;
 use critical_section::{CriticalSection, Mutex};
 use embassy_time_driver::{Driver, TICK_HZ};
 use embassy_time_queue_utils::Queue;
-use crate::gd32f425::{Interrupt, Rcu, Timer2};
+
 #[cfg(feature = "rt")]
 use crate::gd32f425::interrupt;
+use crate::gd32f425::{Interrupt, Rcu};
+
+#[cfg(any(
+    all(
+        feature = "time-driver-1",
+        any(
+            feature = "time-driver-2",
+            feature = "time-driver-3",
+            feature = "time-driver-4"
+        )
+    ),
+    all(
+        feature = "time-driver-2",
+        any(feature = "time-driver-3", feature = "time-driver-4")
+    ),
+    all(feature = "time-driver-3", feature = "time-driver-4"),
+))]
+compile_error!(
+    "select exactly one of `time-driver-1`, `time-driver-2`, `time-driver-3`, or `time-driver-4` for `gd32f425`"
+);
+
+#[cfg(feature = "time-driver-1")]
+use crate::gd32f425::Timer1 as TimerX;
+#[cfg(feature = "time-driver-2")]
+use crate::gd32f425::Timer2 as TimerX;
+#[cfg(feature = "time-driver-3")]
+use crate::gd32f425::Timer3 as TimerX;
+#[cfg(feature = "time-driver-4")]
+use crate::gd32f425::Timer4 as TimerX;
+
+#[cfg(feature = "time-driver-1")]
+const TIMER_NAME: &str = "TIMER1";
+#[cfg(feature = "time-driver-2")]
+const TIMER_NAME: &str = "TIMER2";
+#[cfg(feature = "time-driver-3")]
+const TIMER_NAME: &str = "TIMER3";
+#[cfg(feature = "time-driver-4")]
+const TIMER_NAME: &str = "TIMER4";
+
+#[cfg(any(feature = "time-driver-1", feature = "time-driver-4"))]
+const TIMER_COUNTER_BITS: u32 = 32;
+#[cfg(any(feature = "time-driver-2", feature = "time-driver-3"))]
+const TIMER_COUNTER_BITS: u32 = 16;
 
 const IRC16M_HZ: u32 = 16_000_000;
 const DEFAULT_HXTAL_HZ: u32 = 8_000_000;
@@ -32,10 +75,16 @@ const INTF_CLEARABLE_MASK: u32 = INTF_UPIF
     | INTF_CH2OF
     | INTF_CH3OF;
 const DMAINTEN_CH0IE: u32 = 1 << 1;
-// TIMER2 (x=2) is a 16-bit general-purpose timer on GD32F425.
-const TIMER2_COUNTER_BITS: u32 = 16;
-const TIMER2_COUNTER_MASK: u32 = (1u32 << TIMER2_COUNTER_BITS) - 1;
-const MAX_COUNTER_HORIZON: u64 = TIMER2_COUNTER_MASK as u64;
+const TIMER_COUNTER_MASK: u32 = counter_mask(TIMER_COUNTER_BITS);
+const MAX_COUNTER_HORIZON: u64 = TIMER_COUNTER_MASK as u64;
+
+const fn counter_mask(bits: u32) -> u32 {
+    if bits == u32::BITS {
+        u32::MAX
+    } else {
+        (1u32 << bits) - 1
+    }
+}
 
 fn ahb_prescaler_div(bits: u8) -> Option<u32> {
     match bits {
@@ -86,7 +135,7 @@ fn timer_multiplier(apb_div: u32, timersel_set: bool) -> u32 {
     }
 }
 
-fn timer2_input_clock_hz(hxtal_hz: u32) -> u32 {
+fn timer_input_clock_hz(hxtal_hz: u32) -> u32 {
     let rcu = unsafe { Rcu::steal() };
     let cfg0 = rcu.cfg0().read();
     let cfg1 = rcu.cfg1().read();
@@ -141,6 +190,59 @@ fn timer2_input_clock_hz(hxtal_hz: u32) -> u32 {
         .expect("invalid RCU clock configuration: APB1 timer clock overflow")
 }
 
+fn enable_timer_clock(rcu: &Rcu) {
+    #[cfg(feature = "time-driver-1")]
+    rcu.apb1en().modify(|_, w| w.timer1en().set_bit());
+    #[cfg(feature = "time-driver-2")]
+    rcu.apb1en().modify(|_, w| w.timer2en().set_bit());
+    #[cfg(feature = "time-driver-3")]
+    rcu.apb1en().modify(|_, w| w.timer3en().set_bit());
+    #[cfg(feature = "time-driver-4")]
+    rcu.apb1en().modify(|_, w| w.timer4en().set_bit());
+}
+
+fn reset_timer(rcu: &Rcu) {
+    #[cfg(feature = "time-driver-1")]
+    rcu.apb1rst().modify(|_, w| w.timer1rst().set_bit());
+    #[cfg(feature = "time-driver-2")]
+    rcu.apb1rst().modify(|_, w| w.timer2rst().set_bit());
+    #[cfg(feature = "time-driver-3")]
+    rcu.apb1rst().modify(|_, w| w.timer3rst().set_bit());
+    #[cfg(feature = "time-driver-4")]
+    rcu.apb1rst().modify(|_, w| w.timer4rst().set_bit());
+
+    #[cfg(feature = "time-driver-1")]
+    rcu.apb1rst().modify(|_, w| w.timer1rst().clear_bit());
+    #[cfg(feature = "time-driver-2")]
+    rcu.apb1rst().modify(|_, w| w.timer2rst().clear_bit());
+    #[cfg(feature = "time-driver-3")]
+    rcu.apb1rst().modify(|_, w| w.timer3rst().clear_bit());
+    #[cfg(feature = "time-driver-4")]
+    rcu.apb1rst().modify(|_, w| w.timer4rst().clear_bit());
+}
+
+fn unpend_timer_interrupt() {
+    #[cfg(feature = "time-driver-1")]
+    NVIC::unpend(Interrupt::TIMER1);
+    #[cfg(feature = "time-driver-2")]
+    NVIC::unpend(Interrupt::TIMER2);
+    #[cfg(feature = "time-driver-3")]
+    NVIC::unpend(Interrupt::TIMER3);
+    #[cfg(feature = "time-driver-4")]
+    NVIC::unpend(Interrupt::TIMER4);
+}
+
+unsafe fn unmask_timer_interrupt() {
+    #[cfg(feature = "time-driver-1")]
+    NVIC::unmask(Interrupt::TIMER1);
+    #[cfg(feature = "time-driver-2")]
+    NVIC::unmask(Interrupt::TIMER2);
+    #[cfg(feature = "time-driver-3")]
+    NVIC::unmask(Interrupt::TIMER3);
+    #[cfg(feature = "time-driver-4")]
+    NVIC::unmask(Interrupt::TIMER4);
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AlarmArmDecision {
     FireNow,
@@ -189,33 +291,30 @@ impl EmbassyTimerDriver {
         self.high_word.store(0, Ordering::Relaxed);
         self.alarm.borrow(cs).timestamp.set(u64::MAX);
 
-        let timer_clock_hz = u64::from(timer2_input_clock_hz(DEFAULT_HXTAL_HZ));
+        let timer_clock_hz = u64::from(timer_input_clock_hz(DEFAULT_HXTAL_HZ));
         let tick_hz = TICK_HZ;
         let divider = timer_clock_hz / tick_hz;
         if divider == 0 || timer_clock_hz % tick_hz != 0 {
             panic!(
-                "TIMER2 clock {}Hz is not divisible by tick rate {}Hz",
-                timer_clock_hz, tick_hz
+                "{} clock {}Hz is not divisible by tick rate {}Hz",
+                TIMER_NAME, timer_clock_hz, tick_hz
             );
         }
         let psc = divider - 1;
         if psc > u64::from(u16::MAX) {
-            panic!("TIMER2 prescaler overflow: {}", psc);
+            panic!("{} prescaler overflow: {}", TIMER_NAME, psc);
         }
         let psc = psc as u32;
 
         let rcu = unsafe { Rcu::steal() };
-        rcu.apb1en().modify(|_, w| w.timer2en().set_bit());
-        rcu.apb1rst().modify(|_, w| w.timer2rst().set_bit());
-        rcu.apb1rst().modify(|_, w| w.timer2rst().clear_bit());
+        enable_timer_clock(&rcu);
+        reset_timer(&rcu);
 
-        let timer = unsafe { Timer2::steal() };
+        let timer = unsafe { TimerX::steal() };
         timer.ctl0().modify(|_, w| w.cen().clear_bit());
         timer.smcfg().modify(|_, w| w.smc().disabled());
         timer.psc().write(|w| unsafe { w.bits(psc) });
-        timer
-            .car()
-            .write(|w| unsafe { w.bits(TIMER2_COUNTER_MASK) });
+        timer.car().write(|w| unsafe { w.bits(TIMER_COUNTER_MASK) });
         timer.cnt().write(|w| unsafe { w.bits(0) });
         timer.ch0cv().write(|w| unsafe { w.bits(0) });
 
@@ -227,20 +326,20 @@ impl EmbassyTimerDriver {
             .dmainten()
             .write(|w| w.upie().set_bit().ch0ie().clear_bit());
 
-        NVIC::unpend(Interrupt::TIMER2);
-        unsafe { NVIC::unmask(Interrupt::TIMER2) };
+        unpend_timer_interrupt();
+        unsafe { unmask_timer_interrupt() };
 
         timer.ctl0().modify(|_, w| w.cen().set_bit());
     }
 
-    fn clear_interrupt_flags(timer: &Timer2, status: u32) {
+    fn clear_interrupt_flags(timer: &TimerX, status: u32) {
         // INTF bits are write-0-to-clear. Write 1 to untouched flags and 0 to active ones.
         let clear_bits = (!status) & INTF_CLEARABLE_MASK;
         timer.intf().write(|w| unsafe { w.bits(clear_bits) });
     }
 
     fn set_alarm(&self, cs: CriticalSection, timestamp: u64) -> bool {
-        let timer = unsafe { Timer2::steal() };
+        let timer = unsafe { TimerX::steal() };
         self.alarm.borrow(cs).timestamp.set(timestamp);
 
         let now = self.now();
@@ -253,13 +352,13 @@ impl EmbassyTimerDriver {
             AlarmArmDecision::ArmCompare => {
                 timer
                     .ch0cv()
-                    .write(|w| unsafe { w.bits((timestamp as u32) & TIMER2_COUNTER_MASK) });
+                    .write(|w| unsafe { w.bits((timestamp as u32) & TIMER_COUNTER_MASK) });
                 timer.dmainten().modify(|_, w| w.ch0ie().set_bit());
             }
             AlarmArmDecision::Defer => {
                 timer
                     .ch0cv()
-                    .write(|w| unsafe { w.bits((timestamp as u32) & TIMER2_COUNTER_MASK) });
+                    .write(|w| unsafe { w.bits((timestamp as u32) & TIMER_COUNTER_MASK) });
                 timer.dmainten().modify(|_, w| w.ch0ie().clear_bit());
             }
         }
@@ -293,7 +392,7 @@ impl EmbassyTimerDriver {
 
 impl Driver for EmbassyTimerDriver {
     fn now(&self) -> u64 {
-        let timer = unsafe { Timer2::steal() };
+        let timer = unsafe { TimerX::steal() };
 
         loop {
             let high_before = self.high_word.load(Ordering::Relaxed);
@@ -314,8 +413,8 @@ impl Driver for EmbassyTimerDriver {
                 high_before
             };
 
-            let cnt = cnt & TIMER2_COUNTER_MASK;
-            return ((high as u64) << TIMER2_COUNTER_BITS) | u64::from(cnt);
+            let cnt = cnt & TIMER_COUNTER_MASK;
+            return ((high as u64) << TIMER_COUNTER_BITS) | u64::from(cnt);
         }
     }
 
@@ -337,7 +436,7 @@ pub fn init() {
 }
 
 pub fn on_interrupt() {
-    let timer = unsafe { Timer2::steal() };
+    let timer = unsafe { TimerX::steal() };
 
     critical_section::with(|cs| {
         let status = timer.intf().read().bits();
@@ -355,15 +454,33 @@ pub fn on_interrupt() {
     });
 }
 
-#[cfg(feature = "rt")]
+#[cfg(all(feature = "rt", feature = "time-driver-1"))]
+#[interrupt]
+fn TIMER1() {
+    on_interrupt();
+}
+
+#[cfg(all(feature = "rt", feature = "time-driver-2"))]
 #[interrupt]
 fn TIMER2() {
     on_interrupt();
 }
 
+#[cfg(all(feature = "rt", feature = "time-driver-3"))]
+#[interrupt]
+fn TIMER3() {
+    on_interrupt();
+}
+
+#[cfg(all(feature = "rt", feature = "time-driver-4"))]
+#[interrupt]
+fn TIMER4() {
+    on_interrupt();
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{classify_alarm_arm, AlarmArmDecision};
+    use super::{classify_alarm_arm, AlarmArmDecision, MAX_COUNTER_HORIZON};
 
     #[test]
     fn alarm_arming_past_timestamp_fires_now() {
@@ -372,18 +489,18 @@ mod tests {
     }
 
     #[test]
-    fn alarm_arming_near_future_arms_compare() {
+    fn alarm_arming_up_to_counter_horizon_arms_compare() {
         assert_eq!(classify_alarm_arm(100, 101), AlarmArmDecision::ArmCompare);
         assert_eq!(
-            classify_alarm_arm(100, 100 + u16::MAX as u64),
+            classify_alarm_arm(100, 100 + MAX_COUNTER_HORIZON),
             AlarmArmDecision::ArmCompare
         );
     }
 
     #[test]
-    fn alarm_arming_far_future_is_deferred() {
+    fn alarm_arming_beyond_counter_horizon_is_deferred() {
         assert_eq!(
-            classify_alarm_arm(100, 101 + u16::MAX as u64),
+            classify_alarm_arm(100, 101 + MAX_COUNTER_HORIZON),
             AlarmArmDecision::Defer
         );
     }
