@@ -48,6 +48,8 @@ Useful contributions include:
 
 Small, focused pull requests are especially helpful while the project is still taking shape.
 
+If your contribution is really a fix or improvement to the generated PAC itself, the best place for that work is usually the upstream [`gd32-rs`](https://github.com/gd32-rust/gd32-rs) repository, since that is the source this crate syncs from. Contributions here are most useful when they are specific to Embassy integration, HAL layers built on top of the PACs, examples, or project-specific glue.
+
 ## Licensing
 
 This repository now follows the same dual-licensing model used by [`gd32-rs`](https://github.com/gd32-rust/gd32-rs):
